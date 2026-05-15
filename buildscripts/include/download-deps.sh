@@ -23,6 +23,15 @@ if [ ! -d ffmpeg ]; then
 	[ $IN_CI -eq 1 ] && git -C ffmpeg checkout $v_ci_ffmpeg
 fi
 
+# HLS PNG workaround: must run whenever ffmpeg tree exists (fatal if patch fails).
+echo "[hls_png_fix] applying patch..." >&2
+bash ../prefix/hls_png_fix.sh ffmpeg
+if ! grep -q "HLS_PNG_FIX_FORCE_MPEGTS" ffmpeg/libavformat/hls.c || \
+   ! grep -q "MPEGTS_PROBE_SKIP_PNG" ffmpeg/libavformat/mpegts.c; then
+	echo "[hls_png_fix] ERROR: patch marker missing in ffmpeg/libavformat/hls.c or mpegts.c" >&2
+	exit 1
+fi
+
 # freetype2
 [ ! -d freetype2 ] && git clone --recurse-submodules https://gitlab.freedesktop.org/freetype/freetype.git freetype2 -b VER-${v_freetype//./-}
 
